@@ -1,0 +1,82 @@
+-- ================================================================
+-- SQL SCRIPT 02: VALIDATION & RECONCILIATION AUDIT
+-- Project: driiiportfolio
+-- ================================================================
+
+-- Audit 1: Referential integrity check for transaction-to-member validity
+SELECT
+  'orphan_transactions' AS audit_name,
+  COUNT(t.transaction_id) AS violation_count
+FROM `driiiportfolio.loyalty_analytics.fact_transactions` t
+LEFT JOIN `driiiportfolio.loyalty_analytics.dim_members` m
+  ON m.member_id = t.member_id
+WHERE m.member_id IS NULL;
+
+-- Audit 2: Referential integrity for charge destinations
+SELECT
+  'orphan_store_ids' AS audit_name,
+  COUNT(t.transaction_id) AS violation_count
+FROM `driiiportfolio.loyalty_analytics.fact_transactions` t
+LEFT JOIN `driiiportfolio.loyalty_analytics.dim_stores` s
+  ON s.store_id = t.store_id
+WHERE s.store_id IS NULL;
+
+-- Audit 3: Transaction date must occur after member signup
+SELECT
+  'transaction_after_signup_violation' AS audit_name,
+  COUNT(t.transaction_id) AS violation_count
+FROM `driiiportfolio.loyalty_analytics.fact_transactions` t
+JOIN `driiiportfolio.loyalty_analytics.dim_members` m
+  ON m.member_id = t.member_id
+WHERE t.transaction_date < m.signup_date;
+
+-- Audit 4: Financial reconciliation for invalid or negative spend
+SELECT
+  'invalid_net_spend' AS audit_name,
+  COUNT(transaction_id) AS violation_count
+FROM `driiiportfolio.loyalty_analytics.fact_transactions`
+WHERE net_spend <= 0;
+
+-- Audit 5: Duplicate transaction IDs
+SELECT
+  'duplicate_transaction_ids' AS audit_name,
+  COUNT(transaction_id) AS violation_count
+FROM (
+  SELECT transaction_id
+  FROM `driiiportfolio.loyalty_analytics.fact_transactions`
+  GROUP BY transaction_id
+  HAVING COUNT(*) > 1
+);
+
+-- Audit 6: Ledger reconciliation by stars earned
+SELECT
+  'star_ledger_total_mismatch' AS audit_name,
+  COUNT(*) AS violation_count
+FROM (
+  SELECT
+    t.transaction_id,
+    SUM(COALESCE(sl.stars_earned, 0)) AS stars_total
+  FROM `driiiportfolio.loyalty_analytics.fact_transactions` t
+  LEFT JOIN `driiiportfolio.loyalty_analytics.fact_star_ledgers` sl
+    ON sl.transaction_id = t.transaction_id
+  GROUP BY t.transaction_id
+  HAVING SUM(COALESCE(sl.stars_earned, 0)) < 0
+);
+
+-- Audit 7: Heteroskedasticity check by tier for spend variance
+SELECT
+  current_tier,
+  COUNT(*) AS member_count,
+  VARIANCE(net_spend) AS spend_variance
+FROM `driiiportfolio.loyalty_analytics.fact_transactions` t
+JOIN `driiiportfolio.loyalty_analytics.dim_members` m
+  ON m.member_id = t.member_id
+GROUP BY current_tier
+ORDER BY spend_variance DESC;
+
+-- Audit 8: Recent window query guardrail for cost-sensitive analytical work
+SELECT
+  'recent_window_scan_check' AS audit_name,
+  COUNT(*) AS row_count
+FROM `driiiportfolio.loyalty_analytics.fact_transactions`
+WHERE transaction_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY);

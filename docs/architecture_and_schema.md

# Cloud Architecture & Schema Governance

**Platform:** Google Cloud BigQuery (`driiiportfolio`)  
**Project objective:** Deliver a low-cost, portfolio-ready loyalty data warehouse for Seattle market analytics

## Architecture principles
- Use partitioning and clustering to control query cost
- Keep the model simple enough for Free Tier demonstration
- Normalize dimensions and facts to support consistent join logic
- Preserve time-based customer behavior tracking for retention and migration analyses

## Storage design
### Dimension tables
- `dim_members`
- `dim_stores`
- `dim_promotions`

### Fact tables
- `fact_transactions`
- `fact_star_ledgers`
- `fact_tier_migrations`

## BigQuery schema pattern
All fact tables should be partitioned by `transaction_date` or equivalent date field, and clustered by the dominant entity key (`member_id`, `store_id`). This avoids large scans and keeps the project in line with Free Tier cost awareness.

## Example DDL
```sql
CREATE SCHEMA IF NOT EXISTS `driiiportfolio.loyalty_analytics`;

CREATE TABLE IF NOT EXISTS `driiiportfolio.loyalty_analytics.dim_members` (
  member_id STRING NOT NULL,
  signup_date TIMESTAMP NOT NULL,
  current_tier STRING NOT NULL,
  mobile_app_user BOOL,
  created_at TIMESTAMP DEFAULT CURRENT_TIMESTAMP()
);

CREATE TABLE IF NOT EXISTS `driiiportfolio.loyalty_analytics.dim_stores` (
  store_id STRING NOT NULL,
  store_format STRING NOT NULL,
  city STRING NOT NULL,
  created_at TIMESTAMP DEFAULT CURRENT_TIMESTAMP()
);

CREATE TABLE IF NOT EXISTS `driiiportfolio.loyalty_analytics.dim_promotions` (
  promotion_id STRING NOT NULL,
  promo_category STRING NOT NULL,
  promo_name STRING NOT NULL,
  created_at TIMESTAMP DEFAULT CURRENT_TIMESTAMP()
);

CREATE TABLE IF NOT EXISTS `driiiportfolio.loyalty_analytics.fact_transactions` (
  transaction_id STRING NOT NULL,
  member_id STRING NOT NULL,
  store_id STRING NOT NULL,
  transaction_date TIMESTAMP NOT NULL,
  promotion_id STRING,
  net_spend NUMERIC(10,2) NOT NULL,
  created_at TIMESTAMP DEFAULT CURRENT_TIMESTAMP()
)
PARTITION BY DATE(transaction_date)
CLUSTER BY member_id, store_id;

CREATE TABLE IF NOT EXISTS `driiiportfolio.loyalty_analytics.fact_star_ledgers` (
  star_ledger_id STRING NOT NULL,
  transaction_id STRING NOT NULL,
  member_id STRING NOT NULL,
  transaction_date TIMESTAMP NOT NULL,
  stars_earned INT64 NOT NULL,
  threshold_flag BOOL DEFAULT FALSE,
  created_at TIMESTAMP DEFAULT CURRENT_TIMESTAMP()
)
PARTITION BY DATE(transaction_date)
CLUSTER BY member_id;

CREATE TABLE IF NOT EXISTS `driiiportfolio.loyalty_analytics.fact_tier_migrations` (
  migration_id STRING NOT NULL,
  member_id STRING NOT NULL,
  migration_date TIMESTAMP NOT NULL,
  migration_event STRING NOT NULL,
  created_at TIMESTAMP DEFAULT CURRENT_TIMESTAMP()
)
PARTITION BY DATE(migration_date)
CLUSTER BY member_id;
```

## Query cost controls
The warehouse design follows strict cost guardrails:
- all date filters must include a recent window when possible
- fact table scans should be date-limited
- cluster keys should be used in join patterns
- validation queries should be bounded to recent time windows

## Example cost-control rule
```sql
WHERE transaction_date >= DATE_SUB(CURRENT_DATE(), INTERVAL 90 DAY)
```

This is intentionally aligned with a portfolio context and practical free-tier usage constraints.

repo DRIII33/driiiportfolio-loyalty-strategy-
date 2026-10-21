@@ -1,0 +1,54 @@
+# Causal Inference & Econometric Methodology
+
+## Business problem framing
+The project focuses on a realistic loyalty problem: members do not only spend; they also respond to loyalty design features, app engagement, and threshold conditions. A naive descriptive analysis would overstate the value of app usage or promotion exposure because customers who are already highly engaged are more likely to adopt those features. This is why causal methods are essential.
+
+## Method 1: OLS with HC3 robust standard errors
+The first model estimates whether mobile app engagement is associated with higher spend after controlling for tenure and current tier. Because transaction spend distributions are heavy-tailed and variance increases among high-value customers, standard OLS standard errors are unreliable.
+
+For this reason, we use HC3 robust standard errors (Davidson-MacKinnon) to correct heteroskedasticity without changing the coefficient estimates themselves. This gives more credible inference when the data includes heavier variance in premium or high-frequency member spending.
+
+The model is structured as:
+- dependent variable: total spend or log spend
+- explanatory variables: app feature adoption, tenure, tier, promotion exposure
+- inference: HC3 robust covariance matrix
+
+This approach supports a defensible estimate of whether app adoption is linked to spend independent of observable tier effects.
+
+## Method 2: Regression Discontinuity Design (RDD)
+The second design evaluates whether a sharp threshold creates a measurable behavioral discontinuity. In the Starbucks context, the 200-Star threshold is a natural candidate because it creates a meaningful program milestone that may shift customer behavior.
+
+The project estimates whether spend or redemption behavior changes discontinuously around the threshold. The design is useful when we suspect a discrete psychological or programmatic effect: customers just above the threshold may behave differently than customers just below it, even when their underlying behavior is otherwise similar.
+
+This is especially relevant for identifying whether the threshold itself creates urgency, value perception, or reduced friction at a precise behavioral boundary.
+
+## Method 3: Survival analysis and hazard modeling
+Tier retention is not only a conversion problem; it is also a timing problem. The project uses survival analysis to estimate the probability of churn or demotion over time and to evaluate whether customer behaviors, app adoption, or store format alter hazard rates.
+
+A Cox Proportional Hazards model is appropriate because it handles censored customer tenure data and estimates relative hazard differences across groups. This is useful for understanding whether certain members are more likely to remain in place or slip down to lower tiers over time.
+
+## Method 4: Logistic regression for tier retention triggers
+To make the retention story operational, the project also estimates a logistic regression for the probability of retaining or transitioning successfully across loyalty milestones. This produces odds ratios that help leadership answer questions such as:
+- Does mobile order frequency increase retention odds?
+- Do premium product purchases improve retention probability?
+- Are some store formats associated with less friction than others?
+
+## Why these methods are appropriate
+This project is specifically designed to avoid simplistic descriptive claims. The combination of HC3-robust OLS, RDD, and survival modeling is intentional because the dataset includes:
+- skewed spend distributions
+- self-selection into app or promotion usage
+- threshold-driven customer behavior
+- timing effects in churn and migration
+
+These are common analytical realities in retail loyalty analytics and are exactly the types of problems a Data Analyst, Loyalty Strategy role is expected to solve.
+
+## Diagnostic outputs
+The project is designed to surface interpretable diagnostics, including:
+- coefficient estimates
+- p-values and confidence intervals
+- model fit statistics
+- heteroskedasticity diagnostics
+- survival and hazard comparisons
+- threshold-local effect estimates
+
+These outputs allow the portfolio to move beyond storytelling into credible quantification and business recommendation.

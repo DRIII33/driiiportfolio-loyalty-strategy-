@@ -1,0 +1,99 @@
+# Starbucks Rewards Loyalty Strategy Portfolio
+
+**Target Role:** Data Analyst, Loyalty Strategy (Job ID: 260079240)  
+**Google Cloud Project ID:** `driiiportfolio`
+
+## Executive purpose
+This portfolio project is designed to solve a real loyalty strategy bottleneck in the Starbucks Rewards ecosystem: tier migration friction among Green, Gold, and Reserve members in the Seattle market. The project is built to show a structured, data-backed approach to understanding why customers stall at loyalty milestones, how app engagement affects spend, and how promotion design interacts with retention and lifetime value.
+
+## Business scenario
+Starbucks' rewards engine is most valuable when members move from occasional participation to repeat, high-frequency purchasing behavior. In practice, members often experience friction at tier transitions and product adoption boundaries. This project focuses on three core questions:
+
+1. Why do members fail to convert from Green to Gold or Gold to Reserve at expected rates?
+2. Does mobile app adoption meaningfully increase spend after controlling for self-selection and tier differences?
+3. Which promotions improve conversion, retention, and incremental spend without eroding margin?
+
+## Why this matters to Starbucks
+The loyalty program is both a customer engagement engine and a strategic growth lever. If members stall at tier thresholds or do not understand the value of premium products, revenue is left on the table. The project frames the problem as a retention and monetization challenge rather than a simple marketing exercise, which aligns with the Starbucks Data Analyst, Loyalty Strategy role.
+
+## Architecture and technology stack
+- **Python / Google Colab:** synthetic data generation, econometric modeling, diagnostics
+- **Google BigQuery (`driiiportfolio`):** production-style analytical warehouse with partitioning and clustering
+- **Looker Studio:** executive dashboard for strategic storytelling
+- **GitHub:** version-controlled project documentation and reusable SQL/Python deliverables
+
+## Free-tier guardrails
+This project is intentionally constrained to Google Cloud Free Tier boundaries and responsible usage patterns:
+- small, synthetic analytical data volumes
+- BigQuery partition pruning on `transaction_date`
+- clustering on high-cardinality keys such as `member_id` and `store_id`
+- minimal scan patterns and validation queries designed to avoid unnecessary compute
+- all logic structured for low-cost analytic experimentation and portfolio demonstration
+
+## Repository structure
+```text
+.
+├── README.md
+├── requirements.txt
+├── data/
+│   └── .gitkeep
+├── docs/
+│   ├── Executive_Summary.md
+│   ├── Dashboard_Executive_Summary.md
+│   ├── Project_Disclaimer.md
+│   ├── Causal_Inference_Framework.md
+│   ├── architecture_and_schema.md
+│   └── data_dictionary.md
+├── sql/
+│   ├── 01_create_views.sql
+│   └── 02_validation.sql
+├── src/
+│   ├── generate_synthetic_data.py
+│   └── run_econometric_model.py
+└── artifacts/
+    └── .gitkeep
+```
+
+## Quickstart
+1. Create a Python environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+2. Generate synthetic datasets:
+```bash
+python src/generate_synthetic_data.py
+```
+
+3. Ingest the generated CSV files into BigQuery under the `driiiportfolio` project. Use the project and schema patterns described in `docs/architecture_and_schema.md`.
+
+4. Execute analytical views in BigQuery:
+```sql
+-- Run sql/01_create_views.sql
+-- Run sql/02_validation.sql
+```
+
+5. Run the econometric model pipeline:
+```bash
+python src/run_econometric_model.py
+```
+
+## Portfolio alignment
+This project was structured to align with the Starbucks Data Analyst, Loyalty Strategy role and the associated job competencies:
+
+- Strategic Analytics: causal modeling, hypothesis testing, KPI design
+- Business Performance & Execution: revenue, migration, retention, and promotion measurement
+- Cross-Functional Leadership: stakeholder-facing storytelling through executive visuals and business framing
+- Mission & Values: craftsmanship, courage to challenge assumptions, measurable results, belonging through customer-centric thinking, and joy in solving complex retail problems
+
+## Expected outputs
+- synthetic relational datasets for loyalty analytics
+- BigQuery-ready warehouse structure and validation logic
+- econometric models for spend impact, churn risk, and threshold behavior
+- executive dashboard wireframe aligned to a retail leadership audience
+- a clean, reproducible GitHub portfolio package ready for stakeholder review
+
+## Disclaimer
+This project uses synthetic data designed to mirror realistic Starbucks-style loyalty behavior in Seattle while maintaining a clean controlled environment for analysis and portfolio demonstration.

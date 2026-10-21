@@ -1,0 +1,63 @@
+# Looker Studio Navigation Guide
+
+## Dashboard purpose
+The executive dashboard is designed to translate causal analysis into executive-ready decision support for loyalty strategy leadership. It follows a pyramid structure so that senior leaders see high-level strategy first, then supporting evidence, then detailed model diagnostics only when needed.
+
+## Page 1: Executive KPI Scorecard
+**Goal:** Surface the core business health of the Seattle loyalty program.
+
+**Audience:** Loyalty strategy leads, regional retail leadership, and executive stakeholders
+
+**Visuals:**
+- KPI cards for active loyalty penetration, average customer LTV, 30-day retention rate, and 200-Star redemption velocity
+- filter controls for `current_tier`, `store_format`, and `transaction_month`
+- comparison bars for Green vs Gold vs Reserve member cohorts
+
+**Metrics:**
+- active members within the last 90 days
+- average total spend per member
+- retention rate among members who completed a qualifying cycle
+- average days-to-redemption near threshold zones
+
+## Page 2: Promotional Lift & Incrementality
+**Goal:** Show whether promotions generate incremental value or merely shift timing.
+
+**Visuals:**
+- bar chart of promotion lift by campaign category
+- scatter plot of spend versus promotion exposure
+- OLS-derived effect estimate with confidence interval
+- cohort table comparing incremental spend to baseline behavior
+
+**Calculated fields:**
+- `promo_lift = promo_period_spend - baseline_expected_spend`
+- `incremental_share = promo_lift / total_spend`
+- `lift_significance = p_value`
+
+**Filters:**
+- promotion type
+- membership tier
+- city/store format
+
+## Page 3: Churn Risk & Hazard Profile
+**Goal:** Show where risk is concentrated and which store formats suppress or amplify retention.
+
+**Visuals:**
+- Kaplan-Meier survival curve by tier
+- hazard heatmap across Seattle store formats
+- store-level churn risk scatter plot
+- member migration funnel from Green to Gold to Reserve
+
+**Metrics:**
+- churn hazard ratio by tier
+- cohort survivorship by month
+- migration probability after threshold events
+
+## Design principles
+- zero raw SQL dumps
+- no crowded pivot tables
+- consistent brand-safe color palette
+- metric labels written for business leaders, not analysts
+- only one primary message per page
+
+## Executive recommendation
+This layout is designed to support a boardroom conversation about whether the loyalty strategy should emphasize retention, premium product adoption, or promotion design changes. The dashboard should help stakeholders decide where to allocate operational and marketing effort in the Seattle market.

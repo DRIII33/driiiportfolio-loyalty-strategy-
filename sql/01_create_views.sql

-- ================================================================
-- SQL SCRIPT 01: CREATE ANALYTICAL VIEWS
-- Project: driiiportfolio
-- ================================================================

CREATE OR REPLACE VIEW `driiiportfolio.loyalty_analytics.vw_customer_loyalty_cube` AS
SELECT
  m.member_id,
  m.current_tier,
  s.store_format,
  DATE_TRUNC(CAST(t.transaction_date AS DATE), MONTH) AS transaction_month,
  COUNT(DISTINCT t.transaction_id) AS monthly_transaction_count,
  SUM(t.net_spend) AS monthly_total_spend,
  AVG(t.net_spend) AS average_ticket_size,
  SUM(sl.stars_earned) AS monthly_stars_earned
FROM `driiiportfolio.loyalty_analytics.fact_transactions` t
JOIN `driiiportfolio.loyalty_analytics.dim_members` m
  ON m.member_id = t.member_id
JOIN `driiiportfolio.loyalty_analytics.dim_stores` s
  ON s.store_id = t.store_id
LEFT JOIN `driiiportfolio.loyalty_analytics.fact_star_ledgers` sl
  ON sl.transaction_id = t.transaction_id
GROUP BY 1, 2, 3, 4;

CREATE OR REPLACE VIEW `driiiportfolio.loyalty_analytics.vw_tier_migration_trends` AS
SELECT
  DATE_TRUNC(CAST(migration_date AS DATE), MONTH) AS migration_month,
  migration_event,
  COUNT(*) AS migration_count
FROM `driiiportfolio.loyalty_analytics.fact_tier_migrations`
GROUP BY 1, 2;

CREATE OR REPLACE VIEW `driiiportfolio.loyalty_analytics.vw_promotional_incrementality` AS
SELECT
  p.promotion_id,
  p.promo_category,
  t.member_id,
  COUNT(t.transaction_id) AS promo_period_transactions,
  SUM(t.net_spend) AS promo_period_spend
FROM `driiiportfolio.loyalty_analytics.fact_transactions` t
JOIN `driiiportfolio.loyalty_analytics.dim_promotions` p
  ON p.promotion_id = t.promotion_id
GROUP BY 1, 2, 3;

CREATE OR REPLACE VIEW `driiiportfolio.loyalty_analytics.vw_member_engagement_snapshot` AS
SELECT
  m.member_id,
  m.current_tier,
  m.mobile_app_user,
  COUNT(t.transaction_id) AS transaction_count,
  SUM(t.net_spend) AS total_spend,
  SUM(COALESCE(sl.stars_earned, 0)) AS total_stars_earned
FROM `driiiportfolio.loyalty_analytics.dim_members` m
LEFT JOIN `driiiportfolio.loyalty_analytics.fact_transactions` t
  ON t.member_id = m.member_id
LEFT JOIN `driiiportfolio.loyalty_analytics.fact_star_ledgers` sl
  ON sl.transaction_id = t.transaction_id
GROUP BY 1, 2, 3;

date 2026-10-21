@@ -1,0 +1,30 @@
+# Data Dictionary: Starbucks Loyalty Strategy Analytics
+
+| Table Name | Field Name | Data Type | Description |
+| :--- | :--- | :--- | :--- |
+| `dim_members` | `member_id` | STRING | Unique loyalty member identifier. |
+| `dim_members` | `signup_date` | TIMESTAMP | Date on which the member enrolled in Starbucks Rewards. |
+| `dim_members` | `current_tier` | STRING | Current loyalty tier: Green, Gold, or Reserve. |
+| `dim_members` | `mobile_app_user` | BOOL | Indicator for digital app engagement. |
+| `dim_stores` | `store_id` | STRING | Unique Seattle store identifier. |
+| `dim_stores` | `store_format` | STRING | Store format, such as Drive-Thru, Pickup-Only, or Reserve Roastery. |
+| `dim_stores` | `city` | STRING | City associated with the store. |
+| `dim_promotions` | `promotion_id` | STRING | Unique promotion identifier. |
+| `dim_promotions` | `promo_category` | STRING | Promotion family such as BOGO or Double-Star. |
+| `dim_promotions` | `promo_name` | STRING | Human-readable promotion description. |
+| `fact_transactions` | `transaction_id` | STRING | Unique transaction identifier. |
+| `fact_transactions` | `member_id` | STRING | Member associated with the transaction. |
+| `fact_transactions` | `store_id` | STRING | Store where the purchase occurred. |
+| `fact_transactions` | `transaction_date` | TIMESTAMP | Timestamp of the purchase or transaction. |
+| `fact_transactions` | `promotion_id` | STRING | Promotion attached to the transaction, if any. |
+| `fact_transactions` | `net_spend` | NUMERIC | Final spend after discounts and modifications. |
+| `fact_star_ledgers` | `star_ledger_id` | STRING | Unique stars ledger record. |
+| `fact_star_ledgers` | `transaction_id` | STRING | Transaction associated with the stars earned. |
+| `fact_star_ledgers` | `member_id` | STRING | Member receiving stars. |
+| `fact_star_ledgers` | `transaction_date` | TIMESTAMP | Transaction timestamp associated with stars. |
+| `fact_star_ledgers` | `stars_earned` | INT64 | Number of Stars earned from a transaction. |
+| `fact_star_ledgers` | `threshold_flag` | BOOL | Indicates whether the record is near a stars threshold or threshold-related discontinuity. |
+| `fact_tier_migrations` | `migration_id` | STRING | Unique migration record identifier. |
+| `fact_tier_migrations` | `member_id` | STRING | Member experiencing a tier change. |
+| `fact_tier_migrations` | `migration_date` | TIMESTAMP | Date of the tier change. |
+| `fact_tier_migrations` | `migration_event` | STRING | Event type such as Upgrade to Gold or Reverted to Green. |

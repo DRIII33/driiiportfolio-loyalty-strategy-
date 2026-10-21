@@ -1,0 +1,580 @@
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from lifelines import CoxPHFitter
+from linearmodels import PanelOLS
+from statsmodels.formula.api import ols
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_ROOT / "data"
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+ARTIFACTS_DIR.mkdir(exist_ok=True)
+
+
+def load_data():
+    members = pd.read_csv(DATA_DIR / "dim_members.csv")
+    stores = pd.read_csv(DATA_DIR / "dim_stores.csv")
+    transactions = pd.read_csv(DATA_DIR / "fact_transactions.csv")
+    star_ledgers = pd.read_csv(DATA_DIR / "fact_star_ledgers.csv")
+    migrations = pd.read_csv(DATA_DIR / "fact_tier_migrations.csv")
+    return members, stores, transactions, star_ledgers, migrations
+
+
+def run_ols_model(members, transactions, star_ledgers):
+    member_spend = (
+        transactions.groupby("member_id", as_index=False)["net_spend"].agg(["sum", "count"])
+    )
+    member_spend.columns = ["member_id", "total_spend", "transaction_count"]
+
+    member_features = members.merge(member_spend, on="member_id", how="left")
+    member_features["signup_date"] = pd.to_datetime(member_features["signup_date"])
+    member_features["tenure_days"] = (pd.Timestamp("2026-10-18") - member_features["signup_date"]).dt.days
+    member_features["app_feature_adoption"] = np.where(member_features["mobile_app_user"].fillna(False), 1, 0)
+
+    star_totals = star_ledgers.groupby("member_id", as_index=False)["stars_earned"].sum()
+    member_features = member_features.merge(star_totals, on="member_id", how="left")
+    member_features["log_total_spend"] = np.log1p(member_features["total_spend"].fillna(0))
+
+    ols_formula = "log_total_spend ~ app_feature_adoption + tenure_days + C(current_tier)"
+    model = ols(ols_formula, data=member_features).fit(cov_type="HC3")
+    return model, member_features
+
+
+def run_panel_model(transactions, members):
+    transaction_features = transactions.merge(members[["member_id", "current_tier", "mobile_app_user"]], on="member_id", how="left")
+    transaction_features["transaction_date"] = pd.to_datetime(transaction_features["transaction_date"])
+    transaction_features = transaction_features.set_index(["member_id", "transaction_date"]).sort_index()
+    transaction_features["app_feature_adoption"] = np.where(transaction_features["mobile_app_user"].fillna(False), 1, 0)
+    panel_model = PanelOLS.from_formula(
+        "net_spend ~ 1 + app_feature_adoption + C(current_tier)",
+        data=transaction_features,
+    ).fit(cov_type="clustered", clusters=transaction_features.index.get_level_values(0))
+    return panel_model, transaction_features
+
+
+def run_rdd_model(member_features):
+    member_features = member_features.copy()
+    member_features["running_variable"] = member_features["stars_earned"] - 200
+    member_features["above_threshold"] = (member_features["running_variable"] >= 0).astype(int)
+    bandwidth = member_features[
+        (member_features["running_variable"] >= -50) & (member_features["running_variable"] <= 50)
+    ].copy()
+    rdd_formula = "log_total_spend ~ above_threshold + running_variable + above_threshold:running_variable"
+    rdd_model = ols(rdd_formula, data=bandwidth).fit(cov_type="HC3")
+    return rdd_model, bandwidth
+
+
+def run_survival_model(members, transactions, migrations):
+    member_summary = (
+        transactions.groupby("member_id", as_index=False)["net_spend"].sum().rename(columns={"net_spend": "total_spend"})
+    )
+    member_summary = member_summary.merge(members[["member_id", "signup_date", "current_tier", "mobile_app_user"]], on="member_id", how="left")
+    member_summary["signup_date"] = pd.to_datetime(member_summary["signup_date"])
+    member_summary["duration_days"] = (pd.Timestamp("2026-10-18") - member_summary["signup_date"]).dt.days
+    member_summary["event_observed"] = np.where(
+        member_summary["member_id"].isin(migrations["member_id"].unique()), 1, 0
+    )
+    member_summary["app_feature_adoption"] = np.where(member_summary["mobile_app_user"].fillna(False), 1, 0)
+    cph = CoxPHFitter()
+    cph.fit(
+        member_summary[["duration_days", "event_observed", "app_feature_adoption", "current_tier"]],
+        duration_col="duration_days",
+        event_col="event_observed",
+    )
+    return cph, member_summary
+
+
+def save_outputs(model_bundle):
+    output_path = ARTIFACTS_DIR / "econometric_output.json"
+    with output_path.open("w", encoding="utf-8") as f:
+        json.dump(model_bundle, f, indent=2)
+    print(f"Model output saved to: {output_path}")
+
+
+def main():
+    members, stores, transactions, star_ledgers, migrations = load_data()
+
+    ols_model, member_features = run_ols_model(members, transactions, star_ledgers)
+    panel_model, panel_df = run_panel_model(transactions, members)
+    rdd_model, rdd_df = run_rdd_model(member_features)
+    cph_model, survival_df = run_survival_model(members, transactions, migrations)
+
+    print("\n--- OLS / HC3 Summary ---")
+    print(ols_model.summary())
+
+    print("\n--- Panel OLS Summary ---")
+    print(panel_model.summary)
+
+    print("\n--- RDD Summary ---")
+    print(rdd_model.summary())
+
+    print("\n--- Cox PH Summary ---")
+    print(cph_model.summary)
+
+    output_bundle = {
+        "ols_summary": ols_model.summary().as_text(),
+        "panel_summary": panel_model.summary.as_text(),
+        "rdd_summary": rdd_model.summary().as_text(),
+        "cox_summary": cph_model.summary.to_string(),
+    }
+    save_outputs(output_bundle)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
